@@ -1,0 +1,5 @@
+pyinstaller HVSDistributionApp.py -F --onefile
+
+// use -w for no console vvv
+
+pyinstaller HVSDistributionApp.py -F --onefile -w

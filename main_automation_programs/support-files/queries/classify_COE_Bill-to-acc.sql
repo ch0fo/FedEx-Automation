@@ -1,0 +1,3 @@
+SELECT AWB_NBR, EXPORT_COUNTRY_CD as COE, DUTY_BILL_TO_ACCT_NBR as BILL_TO_ACC
+FROM classify.shipment
+WHERE ({awbs_to_search})

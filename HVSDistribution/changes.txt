@@ -1,0 +1,6 @@
+1. Show chromedriver path in main menu DONE
+2. Make mobile checkpoint wait longer for reconnecting
+3. Warn to close file trying to open DONE
+4. Automatically complete okta DONE
+5. Automatically click Classify button DONE
+6. SAVE USER DATA TO REDUCE LOGINS DONE
