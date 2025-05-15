@@ -18,7 +18,6 @@ def initializeFlag():
     global notShowAgainFlag
     notShowAgainFlag = False
 
-
 def displayFileName(): 
     if Import.file_path != "": 
         file_name = os.path.basename(Import.file_path)

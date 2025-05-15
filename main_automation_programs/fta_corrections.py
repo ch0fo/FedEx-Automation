@@ -297,15 +297,19 @@ def run_corrections() -> None:
         fta_wb.save()
         fta_wb.close
 
-    #updating path for last used fta_macro
-    dotenv.set_key(dotenv_path=dotenv.find_dotenv(), key_to_set='last_fta_filepath', value_to_set= str(new_corrections_path))
-
     #Emailing results
-    if not empty_fta: 
-        send_email(f'FTA_CORRECTIONS_0003 {datetime.today().strftime("%d-%b-%Y")}', files=[str(new_corrections_path)])
-        print("Valid corrections")
-    else: print("Unable to email corrections; empty corrections file.")
-
+    try:
+        if not empty_fta: 
+            send_email(f'FTA_CORRECTIONS_0003 {datetime.today().strftime("%d-%b-%Y")}', files=[str(new_corrections_path)])
+            print("Valid corrections")
+        else: print("Unable to email corrections; empty corrections file.")
+    except Exception as e:
+        print(f"Failed to email corrections, see details: \n\n\{e}\n\n")
+    else:
+        #updating path for last used fta_macro
+        dotenv.set_key(dotenv_path=dotenv.find_dotenv(), key_to_set='last_fta_filepath', value_to_set= str(new_corrections_path))
+        #Note that the path will only update if the corrections are emailed successfully.
+        
     return None
 
 if __name__ == "__main__":

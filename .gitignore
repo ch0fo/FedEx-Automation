@@ -22,3 +22,5 @@ main_automation_programs/awb_splits/*
 !main_automation_programs/reports/audits/quality-audits/templates/2c. CETA_.xlsm
 !main_automation_programs/reports/audits/quality-audits/templates/3a. USMCA Weekly Com LVS $40 to $150_.xlsm
 !main_automation_programs/reports/audits/quality-audits/templates/7. CUKTCA_Commercial_.xlsm
+main_automation_programs/support-files/Oracle/*
+!main_automation_programs/support-files/Oracle/readme.md
