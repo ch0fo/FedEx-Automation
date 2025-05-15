@@ -12,9 +12,12 @@ __pycache__
 */__pycache__/*
 awb_splits/*
 main_automation_programs/reports/audits/fta-corrections/*
+!main_automation_programs/reports/audits/fta-corrections/readme.md
 main_automation_programs/reports/audits/quality-audits/*
 main_automation_programs/reports/OIC/*
+!main_automation_programs/reports/OIC/readme.md
 main_automation_programs/awb_splits/*
+!main_automation_programs/awb_splits/readme.md
 !main_automation_programs/reports/audits/quality-audits/templates/
 !main_automation_programs/reports/audits/quality-audits/templates/2c. CETA_.xlsm
 !main_automation_programs/reports/audits/quality-audits/templates/3a. USMCA Weekly Com LVS $40 to $150_.xlsm

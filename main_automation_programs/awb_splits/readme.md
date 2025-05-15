@@ -1,0 +1,1 @@
+All awb splits will be stored here, by chunks with dated directories. These are automatically created with the awb_split.py program
