@@ -16,7 +16,7 @@ cs = 'edwmiscop1.prod.fedex.com'
 
 odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
 
-def execute_query(query: str, pw: str, dates: str = '', starting: str = '', ending: str = ''):
+def execute_query(query: str, pw: str, dates: str = '', starting: str = '', ending: str = '', date_query: bool = True):
     """
     Executes given query in MISA DB.
 
@@ -29,12 +29,15 @@ def execute_query(query: str, pw: str, dates: str = '', starting: str = '', endi
     #fetching
     with teradatasql.connect(host=cs, user=un, password=pw) as connection:
         engine = create_engine('teradatasql://', creator=lambda: connection) #using sqlalchemy for better compatibility
-        if starting != '' and ending != '':
+        if date_query and starting != '' and ending != '':
             print(f"Fetching for dates {starting} to {ending}")
             curr_qry: str = query.format(starting = starting, ending = ending)
-        else:
+        elif date_query:
             print(f"Fetching for dates {dates}")
             curr_qry: str = query.format(dates = dates)
+        else:
+            print(f"Fetching MISA")
+            curr_qry: str = query
         data = pd.read_sql_query(sql=curr_qry, con=engine)
     print(f"Time taken to run MISA query: {time.time()-t} secs")
     return data

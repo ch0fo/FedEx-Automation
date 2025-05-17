@@ -15,6 +15,7 @@ from zipfile import ZIP_DEFLATED
 import pandas as pd, numpy as np
 from pandas import DataFrame
 import classify_db
+from typing import Dict
 
 #Selenium imports
 from selenium import webdriver
@@ -359,51 +360,62 @@ def get_password() -> str:
 
     return os.environ['pw']
 
-def merge_files(to_merge: List[str], complete: bool = False) -> pd.DataFrame:
+def merge_files(
+        to_merge: List[str],
+        dtypes: Dict[str, object] = {}, #use this dict to specify what datatypes you want to sue for your file's columns. See the dtypes_complete variable below for an example
+        dates: List[int] = [],
+        # complete: bool = False,
+        awb_col_name: str = 'Tracking Number'
+        ) -> pd.DataFrame:
     """
     Merges given files into a single dataframe
 
     to_merge: list of paths, as string list, to merge
     """
     print("Merging selected files into one dataframe")
-    headers_partial = {'Tracking Number': 'awb',
-           'Shipment Value': 'cad_val',
-           'Importer Name': 'importer'}
-    dtypes_complete = {'Tracking Number': np.int64,
-           'Shipment Value': np.float64,
-    }
+    # headers_partial = {'Tracking Number': 'awb',
+    #        'Shipment Value': 'cad_val',
+    #        'Importer Name': 'importer'}
+    # dtypes_complete = {'Tracking Number': np.int64,
+    #        'Shipment Value': np.float64
+    # }
     merged_df: pd.DataFrame = pd.DataFrame()
 
     #merging fetched files
     for path in to_merge:
         try:
-            if not complete:
-                dataframe = pd.read_csv(filepath_or_buffer=path, usecols=['Tracking Number', 'Shipment Value', 'Importer Name'],
-                    dtype={'Tracking Number': np.int64, 'Shipment Value': np.float64, 'Importer Name': str})
-                dataframe = dataframe.rename(columns=headers_partial)
+            # if not complete:
+            #     dataframe = pd.read_csv(filepath_or_buffer=path, usecols=['Tracking Number', 'Shipment Value', 'Importer Name'],
+            #         dtype={'Tracking Number': np.int64, 'Shipment Value': np.float64, 'Importer Name': str})
+            #     dataframe = dataframe.rename(columns=headers_partial)
+            if dtypes:
+                dataframe = pd.read_csv(filepath_or_buffer=path, dtype=dtypes, parse_dates=dates)
             else:
-                dataframe = pd.read_csv(filepath_or_buffer=path, dtype=dtypes_complete, parse_dates=[4])
+                dataframe = pd.read_csv(filepath_or_buffer=path, parse_dates=dates)
         except Exception as e: #may be unable to read a file properly; clean faulty lines
             if isinstance(e, ValueError):
-                dataframe = pd.read_csv(filepath_or_buffer=path, usecols=['Tracking Number'])
+                #Reading awb col to find OLD awbs
+                dataframe = pd.read_csv(filepath_or_buffer=path, usecols=[awb_col_name])
                 drop = list()
                 for row in dataframe.itertuples():
                     try:
                         int(row._1)
                     except:
                         print(f"Faulty line: {row}")
-                        drop.append(int(row.Index))
+                        drop.append(int(row.Index)) #Keeping track of all OLD awbs
                 # reading again and skipping faulty lines
-                if not complete:
-                    dataframe = pd.read_csv(filepath_or_buffer=path, usecols=['Tracking Number', 'Shipment Value', 'Importer Name'],
-                    dtype={'Shipment Value': np.float64, 'Importer Name': str})
-                else:
-                    dataframe = pd.read_csv(filepath_or_buffer=path, parse_dates=[4])
+                # if not complete:
+                #     dataframe = pd.read_csv(filepath_or_buffer=path, usecols=['Tracking Number', 'Shipment Value', 'Importer Name'],
+                #         dtype={'Shipment Value': np.float64, 'Importer Name': str})
+                # else:
+                dataframe = pd.read_csv(filepath_or_buffer=path, parse_dates=dates)
                 print("Dropping faulty")
                 dataframe = dataframe.drop(drop, inplace=False)
-                dataframe = dataframe.astype(dtypes_complete)
-                if not complete:
-                    dataframe = dataframe.rename(columns=headers_partial)
+                # if not complete:
+                #     dataframe = dataframe.astype(dtypes_complete)
+                #     dataframe = dataframe.rename(columns=headers_partial)
+                # else:
+                dataframe = dataframe.astype(dtypes)
                 if merged_df.shape[0] == 0:
                     merged_df = dataframe.copy(deep=True)
                 else:

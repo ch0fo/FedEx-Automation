@@ -22,7 +22,7 @@ def run() -> None:
     for doc in filedialog.askopenfilenames(filetypes= [('CSV Files', '*.csv')]):
         files.append(doc)
     lvs_data: pd.DataFrame = pd.DataFrame()
-    lvs_data = merge_files(files, complete=True)
+    lvs_data = merge_files(files)
     print(f"Volume data:\n{lvs_data}")
 
     #Getting classify data

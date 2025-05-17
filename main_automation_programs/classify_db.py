@@ -26,9 +26,15 @@ def execute_query(query: str, starting: str = '', ending: str = ''):
     if starting != '' and ending != '':
         print(f"Fetching for dates {starting} to {ending}")
         query = query.format(starting = starting, ending = ending)
+
+    #Fetching
+    data = pd.read_sql(sql= query, con= engine)
     try:
-        data = pd.read_sql(sql= query, con= engine, dtype={'awb_nbr': np.int64, 'bill_to_acc': np.int64})
+        # data = pd.read_sql(sql= query, con= engine, dtype={'awb_nbr': np.int64, 'bill_to_acc': np.int64})
+        data = data.astype(dtype={'awb_nbr': np.int64})
     except:
-        data = pd.read_sql(sql=query, con=engine)
+        print("Failed to automatically convert awb col to ints, returning default fetch")
+    else:
+        print("Successfully converted awb col to ints")
     print(f"Time taken to run Classify query: {time.time()-t} secs\n{data}")
     return data
