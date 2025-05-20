@@ -150,6 +150,5 @@ def run(
     #Opening file when done pasting
     os.startfile(report_path)
 
-
 if __name__ == "__main__":
     run()

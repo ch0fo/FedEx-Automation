@@ -160,7 +160,7 @@ def fix_headings(data: DataFrame, index: str) -> DataFrame:
         ],
 
         'CETA_CAS': [
-            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_ANNEX_CD',
+            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_TREATMENT_CD',
             'SHIPMENT_VALUE_FLG', 'COMMODITY_DESC', 'HARMONIZED_TARIFF_NBR', 'cad_value_amt',
             'DUTY_VALUE', 'CANADIAN_ENTRY_NBR', 'oga_shipment_flg',
             'DATE_DT', 'REL_DATE', 'DUTY_BILL_TO_ACCT_NBR', 'STATE_CD',
@@ -173,7 +173,7 @@ def fix_headings(data: DataFrame, index: str) -> DataFrame:
         ],
 
         'CETA_NR': [ #identical to CETA_CAS
-            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_ANNEX_CD',
+            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_TREATMENT_CD',
             'SHIPMENT_VALUE_FLG', 'COMMODITY_DESC', 'HARMONIZED_TARIFF_NBR', 'cad_value_amt',
             'DUTY_VALUE', 'CANADIAN_ENTRY_NBR', 'oga_shipment_flg',
             'DATE_DT', 'REL_DATE', 'DUTY_BILL_TO_ACCT_NBR', 'STATE_CD',
@@ -186,7 +186,7 @@ def fix_headings(data: DataFrame, index: str) -> DataFrame:
         ],
 
         'CPTPP_CAS': [ #identical to CETA_CAS
-            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_ANNEX_CD',
+            'AWB_NBR', 'COMMODITY_LINE_NBR', 'EMPLOYEE_NBR', 'COUNTRY_CD', 'MANUF_ORIGIN_COUNTRY_CD', 'TARIFF_TREATMENT_CD',
             'SHIPMENT_VALUE_FLG', 'COMMODITY_DESC', 'HARMONIZED_TARIFF_NBR', 'cad_value_amt',
             'DUTY_VALUE', 'CANADIAN_ENTRY_NBR', 'oga_shipment_flg',
             'DATE_DT', 'REL_DATE', 'DUTY_BILL_TO_ACCT_NBR', 'STATE_CD',
@@ -203,7 +203,7 @@ def fix_headings(data: DataFrame, index: str) -> DataFrame:
     new_data: DataFrame = data.copy(deep=True)
     for header in fixed_cols[index]:
         if header not in data.columns: #checking if header is missing from existing data
-            data[header] = nan
+            data[header] = nan #for headers missing, create new col with empty values
     
     new_data = data[fixed_cols[index]]
     return new_data #only return cols in the given list, in the given order; gets list from fixed_cols dictionary
@@ -304,7 +304,7 @@ def run_corrections() -> None:
             print("Valid corrections")
         else: print("Unable to email corrections; empty corrections file.")
     except Exception as e:
-        print(f"Failed to email corrections, see details: \n\n\{e}\n\n")
+        print(f"Failed to email corrections, see details: \n \n {e} \n \n")
     else:
         #updating path for last used fta_macro
         dotenv.set_key(dotenv_path=dotenv.find_dotenv(), key_to_set='last_fta_filepath', value_to_set= str(new_corrections_path))
