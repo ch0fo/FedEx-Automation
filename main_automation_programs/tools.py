@@ -15,7 +15,7 @@ from zipfile import ZIP_DEFLATED
 import pandas as pd, numpy as np
 from pandas import DataFrame
 import classify_db
-from typing import Dict
+from typing import Dict, Set
 
 #Selenium imports
 from selenium import webdriver
@@ -544,3 +544,22 @@ def merge_files_df(files: List[str], clean_OLD: bool = True, awb_pos: int = 1) -
     if clean_OLD: merged = merged.drop(find_OLD(merged, awb_position= awb_pos), inplace=False)
 
     return merged
+
+def drop_cols(dataframe: DataFrame, cols_to_keep: List[str]) -> DataFrame:
+    """
+    Given a dataframe, iterates through all its cols and drops all cols not included in the cols_to_keep list.
+
+    Please make sure the cols_to_keep are passed exactly as they are expected, as the drop IS case sensitive (will not keep a col if the given name is in lowercase and it was found as uppercase in the dataframe)
+    """
+
+    print(f"Columns to keep: {cols_to_keep}")
+
+    clean_df: DataFrame = dataframe.copy(deep=True)
+
+    cols_to_drop: Set[str] = set(clean_df.columns) - set(cols_to_keep) #taking off cols to keep from set of all col names, and dropping all remaining cols
+    print(f"Columns to drop: {list(cols_to_drop)}")
+
+    #Dropping cols
+    clean_df = clean_df.drop(columns=list(cols_to_drop), inplace=False)
+
+    return clean_df

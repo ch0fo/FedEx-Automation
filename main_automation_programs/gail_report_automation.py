@@ -2,7 +2,7 @@ from typing import List
 from tkinter import filedialog
 import pandas as pd
 from pandas import DataFrame
-from tools import get_query, find_OLD, merge_files, sql_able_list, get_password
+from tools import get_query, find_OLD, merge_files, sql_able_list, get_password, drop_cols
 from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
@@ -22,6 +22,8 @@ This program will spit out an excel file with three sheets:
 2. One for all non FedEx broker shipments that require B3 creation -> Send to Gilbert Duplessis
 3. One for all GHOST shipments that must be turned into GGG broker -> Send to John (Scott) Raymond and Cherif Manuel
 """
+
+cols_to_keep: List[str] = ['awb_nbr', 'importernme', 'entry_dt', 'billacc', 'cad_val', 'brokr_id', 'duty_bill_to_cd', 'crl_loc', 'coe', 'saccount'] #which cols to keep when creating reduced versions of final sheets
 
 def run(
         ending: str = ((datetime.today().replace(day=1)) - timedelta(days=1)).strftime("'%d-%b-%y'"), #getting last day of last month
@@ -45,6 +47,7 @@ def run(
     print(f"Volume data:\n{lvs_data}")
 
     # #Getting classify data
+    print("Now fetching Classify data")
     classify_query: str = get_query(r"main_automation_programs\support-files\queries\gail_report_classify.sql") #reading saved query
     classify_data: DataFrame = execute_query(classify_query, ending=ending, starting=starting) #adding awbs to query, getting data
     classify_data = classify_data.drop(find_OLD(classify_data), inplace=False) #dropping OLD awbs
@@ -58,6 +61,10 @@ def run(
     missing_volume: set = set(classify_data['awb_nbr']) - set(lvs_data[awb_col]) #getting all awbs missing from gail's report
     awbs_to_drop: set = set(classify_data['awb_nbr']) - missing_volume #getting all awbs to drop so that only the missing awbs are kept
     remaining_classify_data: DataFrame = classify_data.drop(awbs_to_drop, inplace= False)
+    #Fixing date col
+    remaining_classify_data['entry_dt'] = pd.to_datetime(remaining_classify_data['entry_dt'], format="%Y-%m-%d") #reading date in
+    remaining_classify_data['entry_dt'] = remaining_classify_data['entry_dt'].dt.strftime("%d-%b-%Y") #formatting date to '05-May-25' format
+
     print(f"Remaining Classify data after match with Gail's Report (all Classify volume not in Gail's Report):\n{remaining_classify_data}")
     if len(remaining_classify_data.index) == 0:
         print("No missing shipments were found in Gail's Report.")
@@ -123,27 +130,25 @@ def run(
     print(f"FedEx broker shipments missing B3: \n {fedex_broker_shipments}")
     print(f"Non FedEx broker shipments missing B3: \n {CBI_broker_shipments}")
 
+    #Getting reduced dataframes, as most cols are too bulky to include in email
+    print("Dropping bulky awbs from results")
+    ghost_shipments_reduced: DataFrame = drop_cols(ghost_shipments, cols_to_keep)
+    fedex_broker_shipments_reduced: DataFrame = drop_cols(fedex_broker_shipments, cols_to_keep)
+    CBI_broker_shipments_reduced: DataFrame = drop_cols(CBI_broker_shipments, cols_to_keep)
+
     #Pasting results to excel file
     report_path: Path = Path(os.getcwd())/f'gails_report_{datetime.today().strftime("%d-%b-%Y")}.xlsx' #getting path to save results to
     print(f"Exporting results to '{str(report_path)}'")
     with pd.ExcelWriter(path= report_path, engine='openpyxl', mode='w') as writer: #writing results out to excel file
+        ghost_shipments_reduced.to_excel(excel_writer=writer, sheet_name='GGG_reduced', na_rep='', index=False)
+        fedex_broker_shipments_reduced.to_excel(excel_writer=writer, sheet_name='FedEx_reduced', na_rep='', index=False)
+        CBI_broker_shipments_reduced.to_excel(excel_writer=writer, sheet_name='CBI_reduced', na_rep='', index=False)
         ghost_shipments.to_excel(excel_writer=writer, sheet_name='GGG', na_rep='', index=False)
         fedex_broker_shipments.to_excel(excel_writer=writer, sheet_name='FedEx', na_rep='', index=False)
         CBI_broker_shipments.to_excel(excel_writer=writer, sheet_name='CBI', na_rep='', index=False)
 
     #Opening file when done pasting
     os.startfile(report_path)
-
-
-    # #Merging data
-    # complete_df = lvs_data.join(classify_data, on='Tracking Number', lsuffix='_volume', rsuffix='_classify')
-    # print(f"Merged dataframe:\n{complete_df}")
-
-    # #Printing out to downloads
-    # path = Path(os.path.expanduser("~"))/'Downloads'/f'classify_data_{time.time_ns()}.xlsx'
-    # complete_df.to_excel(excel_writer=str(path), sheet_name='data', na_rep='null', index=False)
-    # print(f"Data copied to '{str(path)}'")
-    # # print(f"Percentage of data found in classify: {(classify_data.shape[0]/lvs_data.shape[0])*100}%")
 
 
 if __name__ == "__main__":
