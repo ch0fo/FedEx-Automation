@@ -27,7 +27,7 @@ def get_intercept_data(
     days: int = 31,
     day_shift: int = 0,
     query_host: str = "edwmiscop1.prod.fedex.com",
-    username: str = "dg6171152",
+    username: str = get_envvar('misa-username'),
     save_dataframe_as: _MODES = 'csv',
     return_dataframe: bool = False,
     spooling_delay: int = 5
@@ -164,5 +164,5 @@ def split_dataframe(source_dataframe: pd.DataFrame, split_length: int = 1048576)
 if __name__ == '__main__':
     get_intercept_data(query= get_query(query_path=r'main_automation_programs\support-files\queries\intercept_data.sql'),
                        #Modify the dates below to fetch for the time window you want
-                       first_day= datetime.datetime(2025,5,3), custom_last_day=datetime.datetime(2025,5,9), day_shift=4,
+                       first_day= datetime.datetime(2025,5,10), custom_last_day=datetime.datetime(2025,5,20), day_shift=4,
                        password=get_envvar(var_name='pw'))

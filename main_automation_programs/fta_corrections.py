@@ -296,7 +296,6 @@ def run_corrections() -> None:
         print("Saving, closing")
         fta_wb.save()
         fta_wb.close
-
     #Emailing results
     try:
         if not empty_fta: 
