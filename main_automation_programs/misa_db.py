@@ -11,9 +11,6 @@ import time
 from tools import get_envvar
 import teradatasql
 
-un = get_envvar('misa-username')
-cs = 'edwmiscop1.prod.fedex.com'
-
 odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
 
 def execute_query(query: str, pw: str, dates: str = '', starting: str = '', ending: str = '', date_query: bool = True):
@@ -25,7 +22,11 @@ def execute_query(query: str, pw: str, dates: str = '', starting: str = '', endi
     Defaults to starting and ending being empty.
     """
     t = time.time()
+    un = get_envvar('misa-username')
+    cs = 'edwmiscop1.prod.fedex.com'
+    print(f"Using username: '{un}'")
     print(f"Fetching '{cs}' with query '{query[:min(len(query), 200)].replace('\n', ' ')}' (complete query may not be shown)")
+
     #fetching
     with teradatasql.connect(host=cs, user=un, password=pw) as connection:
         engine = create_engine('teradatasql://', creator=lambda: connection) #using sqlalchemy for better compatibility

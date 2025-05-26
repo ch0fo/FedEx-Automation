@@ -225,7 +225,7 @@ def run_corrections() -> None:
         print(f"Querying for '{name}'")
         results[name] = execute_query(
                                         query=get_query(str(queries_path/query)), #getting query path for current query
-                                        pw = get_password(),
+                                        pw = get_envvar('pw'),
                                         starting= start,
                                         ending= end
                                     )
