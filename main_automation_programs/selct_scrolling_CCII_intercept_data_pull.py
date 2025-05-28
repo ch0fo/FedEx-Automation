@@ -72,6 +72,8 @@ def get_intercept_data(
             starting: str = f"'{start.strftime("%Y-%m-%d")}'"
             ending: str = f"'{end.strftime("%Y-%m-%d")}'"
             try:
+                # print(f"Username: {username}\nPassword: {password}")
+                # time.sleep(100000000)
                 with teradatasql.connect(host=query_host, user=username, password=password) as connection:
                     engine = create_engine('teradatasql://', creator=lambda: connection) #using sqlalchemy for better compatibility
                     print(f"Fetching dates {starting} to {ending}")
@@ -164,5 +166,5 @@ def split_dataframe(source_dataframe: pd.DataFrame, split_length: int = 1048576)
 if __name__ == '__main__':
     get_intercept_data(query= get_query(query_path=r'main_automation_programs\support-files\queries\intercept_data.sql'),
                        #Modify the dates below to fetch for the time window you want
-                       first_day= datetime.datetime(2025,5,10), custom_last_day=datetime.datetime(2025,5,20), day_shift=4,
+                       first_day= datetime.datetime(2025,5,17), custom_last_day=datetime.datetime(2025,5,23), day_shift=4,
                        password=get_envvar(var_name='pw'))

@@ -167,7 +167,6 @@ class Fetch:
 
         #Sending email with results
         send_email(subject=f"OIC_TASK_0002 {datetime.datetime.today().strftime("%d-%b-%Y")}", files=[macro_path])
-
         
 def main():
     args = sys.argv
