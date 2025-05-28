@@ -26,3 +26,4 @@ main_automation_programs/support-files/Oracle/*
 !main_automation_programs/support-files/Oracle/readme.md
 *.vscode/
 test.py
+*.json
