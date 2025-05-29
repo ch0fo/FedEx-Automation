@@ -28,4 +28,6 @@ okta_username='your-fedex-emp-id'
 okta_password='your-fedex-password'
 okta_automation='1'
 
-FINAL REMARK: You won't be able to pull / push or do anything with git while connected to a YYZHQ network. Make sure you are working from a vpn before using git.
+You won't be able to pull / push or do anything with git while connected to a YYZHQ network. Make sure you are working from a vpn before using git.
+
+Do do a pip install for all the libraries listed in the libraries.txt file

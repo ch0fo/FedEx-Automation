@@ -10,6 +10,9 @@ from sqlalchemy import create_engine
 import numpy as np
 import time
 from typing import List
+import sys, os
+sys.path.append(os.getcwd())
+sys.path.append(f"{os.getcwd()}/main_automation_programs")
 
 un = 'CTA_AIR_RO_APP'
 pw = 'pQMh1Kx_AaXeMtKbvbmzUUUYkB_b87'
@@ -17,9 +20,12 @@ cs = 'CTA_PROD_FXE_CAN_DBA_SVC.prod.iaas.fedex.com'
 hostname = 'P100375-scan.prod.iaas.fedex.com'
 port = 1526
 
-odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
-
 def execute_query(query: str) -> pd.DataFrame:
+
+    #Initializing oracledb
+    from tools import get_envvar
+    odb.init_oracle_client(lib_dir=get_envvar('oracle_install_path'))
+
     t = time.time()
     params = odb.ConnectParams(host=hostname, port=port, service_name=cs)
     con = odb.connect(user=un, password=pw, params=params)

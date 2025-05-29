@@ -8,10 +8,10 @@ import oracledb as odb
 import pandas as pd
 from sqlalchemy import create_engine
 import time
-from tools import get_envvar
+import sys, os
+sys.path.append(os.getcwd())
+sys.path.append(f"{os.getcwd()}/main_automation_programs")
 import teradatasql
-
-odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
 
 def execute_query(query: str, pw: str, dates: str = '', starting: str = '', ending: str = '', date_query: bool = True):
     """
@@ -21,10 +21,13 @@ def execute_query(query: str, pw: str, dates: str = '', starting: str = '', endi
 
     Defaults to starting and ending being empty.
     """
+    #Initializing oracledb
+    from tools import get_envvar
+    odb.init_oracle_client(lib_dir=get_envvar('oracle_install_path'))
+
     t = time.time()
     un = get_envvar('misa-username')
     cs = 'edwmiscop1.prod.fedex.com'
-    print(f"Using username: '{un}'")
     print(f"Fetching '{cs}' with query '{query[:min(len(query), 200)].replace('\n', ' ')}' (complete query may not be shown)")
 
     #fetching

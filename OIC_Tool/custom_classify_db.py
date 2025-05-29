@@ -11,15 +11,17 @@ import numpy as np
 import sys, os
 sys.path.append(os.getcwd())
 sys.path.append(f"{os.getcwd()}/main_automation_programs")
-from main_automation_programs import tools
 
 un = 'classify_query_app'
 pw = 'ppa_yreuq_yfissalc'
 cs = 'ldap://eusoud.prod.fedex.com/CLASFY_PRD_01_CLASSIFY_S1'
 
-odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
-
 def execute_query(query: str):
+
+    #Initializing oracledb
+    from main_automation_programs.tools import find_OLD, get_envvar
+    odb.init_oracle_client(lib_dir=get_envvar('oracle_install_path'))
+
     connection = odb.connect(user=un, password=pw, dsn=cs)
     engine = create_engine('oracle+oracledb://', creator=lambda: connection) #using sqlalchemy for better compatibility
     data: pd.DataFrame = pd.DataFrame()
@@ -29,7 +31,7 @@ def execute_query(query: str):
         print(f"Ecountered error during normal read: {e}")
         #finding faulty lines
         data = pd.read_sql(sql= query, con= engine, parse_dates=['entry_dt'], dtype={'billacc': np.int64, 'cad_val': np.float64})
-        data = data.drop(labels = tools.find_OLD(data), inplace=False)
+        data = data.drop(labels = find_OLD(data), inplace=False)
 
         #fixing datatype
         data = data.astype({'awb_nbr': np.int64})

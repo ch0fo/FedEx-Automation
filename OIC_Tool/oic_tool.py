@@ -235,7 +235,7 @@ class Fetch:
         os.remove(path) #This is just for removing the original .xlsx document, but the .xlsm document that is acc being sent out will remain saved
 
         #Sending email with results
-        # send_email(subject=f"OIC_TASK_0002 {datetime.datetime.today().strftime("%d-%b-%Y")}", files=[macro_path])
+        send_email(subject=f"OIC_TASK_0002 {datetime.datetime.today().strftime("%d-%b-%Y")}", files=[macro_path])
         
 def main():
 

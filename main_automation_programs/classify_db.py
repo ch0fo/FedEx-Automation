@@ -9,15 +9,21 @@ import pandas as pd
 from sqlalchemy import create_engine
 import numpy as np
 import time
+import sys, os
+sys.path.append(os.getcwd())
+sys.path.append(f"{os.getcwd()}/main_automation_programs")
 
 un = 'classify_query_app'
 pw = 'ppa_yreuq_yfissalc'
 cs = 'ldap://eusoud.prod.fedex.com/CLASFY_PRD_01_CLASSIFY_S1'
 
-#initialize the oracle client, needed to run the queries
-odb.init_oracle_client(lib_dir=r"main_automation_programs\support-files\Oracle\instantclient-basic-windows.x64-23.4.0.24.05\instantclient_23_4")
 
 def execute_query(query: str, starting: str = '', ending: str = ''):
+
+    #initialize the oracle client, needed to run the queries
+    from tools import get_envvar
+    odb.init_oracle_client(lib_dir=get_envvar('oracle_install_path'))   
+
     t = time.time()
     print(f"Fetching '{cs}' with query '{query[:min(len(query), 200)].replace('\n', ' ')}' (complete query may not be shown)")
     connection = odb.connect(user=un, password=pw, dsn=cs)
