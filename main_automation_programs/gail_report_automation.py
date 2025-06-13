@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from tkinter import filedialog
 import pandas as pd
 from pandas import DataFrame
@@ -12,14 +12,14 @@ import os
 from datetime import datetime
 
 """
-Use this program to automate the Gail Reprot, which is usually ran once around the 10th, again around the 15th, and one last time before the 23rd.
+Use this program to automate the Gail Report, which is usually ran once around the 10th, again around the 15th, and one last time before the 23rd.
 
 Feed the two lvs volume files that Gail will send you.
 
-This program will spit out an excel file with three sheets: 
+This program will spit out an excel file for each of the following: 
 
-1. One for all FedEx broker shipments that require B3 creation -> Send to John (Scott) Raymond and Cherif Manuel
-2. One for all non FedEx broker shipments that require B3 creation -> Send to Gilbert Duplessis
+1. One for all FedEx broker shipments that require CAD creation -> Send to John (Scott) Raymond and Cherif Manuel
+2. One for all non FedEx broker shipments that require CAD creation -> Send to Gilbert Duplessis
 3. One for all GHOST shipments that must be turned into GGG broker -> Send to John (Scott) Raymond and Cherif Manuel
 """
 
@@ -46,7 +46,7 @@ def run(
     lvs_data = lvs_data.drop_duplicates(subset=[awb_col], inplace= False, ignore_index=True) #dropping awb dups
     print(f"Volume data:\n{lvs_data}")
 
-    # #Getting classify data
+    #Getting classify data
     print("Now fetching Classify data")
     classify_query: str = get_query(r"main_automation_programs\support-files\queries\gail_report_classify.sql") #reading saved query
     classify_data: DataFrame = execute_query(classify_query, ending=ending, starting=starting) #adding awbs to query, getting data
@@ -71,12 +71,12 @@ def run(
         return 0 #exit program if there are no awbs left to check for movements
 
     #Checking movements on remaining shipments
-    print("Checking for original movements")
+    print("Checking for Canada movements")
     movements_query: str = get_query(r"main_automation_programs\support-files\queries\CA_Delivery.sql").format(
         awbs = sql_able_list(remaining_classify_data['awb_nbr'].to_list(), logic='IN', variable='AL1.shp_trk_nbr')
         ) #formatting query to contain awbs we want to search for
     movements_data: DataFrame = misa_query(movements_query, pw=get_password(), date_query=False).astype({'shp_trk_nbr': np.int64}) #fetching misa, converting awbs to ints
-    print(f"Original movements data: \n {movements_data}") #all theses awbs have movement
+    print(f"Canada movements data: \n {movements_data}") #all theses awbs have movement
 
     #Checking CRNs
     print("Getting CRNs")
@@ -113,42 +113,40 @@ def run(
         #Now, need to append these new master awbs with movement to master movements list
         movements_data = pd.concat([movements_data, master_awbs_movement], ignore_index=True)
         print(f"All awbs with movement: \n {movements_data}")
+    
+    all_results: Dict[str, DataFrame] = dict() #storing all results here, along with their key (name)
 
-    #Now, need to find GHOST shipments, FedEx shipments missing B3, and CBI shipments missing B3
+    #Now, need to find GHOST shipments, FedEx shipments missing CAD, and CBI shipments missing CAD
     ghost_shipments: DataFrame = remaining_classify_data.drop(movements_data['shp_trk_nbr'].to_list(), inplace=False) #drop all awbs with movement, left with all true GHOST data
+    all_results['ghosts'] = ghost_shipments #storing ghost results
 
     #Getting FedEx, Non FedEx shipments
     all_movement_shipments: DataFrame = remaining_classify_data.drop(ghost_shipments['awb_nbr'].to_list(), inplace=False) #all shipments with movement
 
     #Getting FedEx brokers
     fedex_broker_shipments: DataFrame = all_movement_shipments[(all_movement_shipments['brokr_id'] == 'FEC') | (all_movement_shipments['brokr_id'] == 'FON')] #gets all fedex brokers
+    all_results['fedex'] = fedex_broker_shipments
 
     #Getting non fedex brokers
     CBI_broker_shipments: DataFrame = all_movement_shipments.drop(fedex_broker_shipments['awb_nbr'].to_list(), inplace=False)
+    all_results['cbi'] = CBI_broker_shipments
 
     print(f"Ghost shipments: \n {ghost_shipments}")
-    print(f"FedEx broker shipments missing B3: \n {fedex_broker_shipments}")
-    print(f"Non FedEx broker shipments missing B3: \n {CBI_broker_shipments}")
+    print(f"FedEx broker shipments missing CAD: \n {fedex_broker_shipments}")
+    print(f"Non FedEx broker shipments missing CAD: \n {CBI_broker_shipments}")
 
-    #Getting reduced dataframes, as most cols are too bulky to include in email
-    print("Dropping bulky awbs from results")
-    ghost_shipments_reduced: DataFrame = drop_cols(ghost_shipments, cols_to_keep)
-    fedex_broker_shipments_reduced: DataFrame = drop_cols(fedex_broker_shipments, cols_to_keep)
-    CBI_broker_shipments_reduced: DataFrame = drop_cols(CBI_broker_shipments, cols_to_keep)
+    # #Getting reduced dataframes, as most cols are too bulky to include in email NOTE: No longer doing this, just send them the excel file with the complete info.
+    # print("Dropping bulky awbs from results")
+    # ghost_shipments_reduced: DataFrame = drop_cols(ghost_shipments, cols_to_keep)
+    # fedex_broker_shipments_reduced: DataFrame = drop_cols(fedex_broker_shipments, cols_to_keep)
+    # CBI_broker_shipments_reduced: DataFrame = drop_cols(CBI_broker_shipments, cols_to_keep)
 
-    #Pasting results to excel file
-    report_path: Path = Path(os.getcwd())/f'gails_report_{datetime.today().strftime("%d-%b-%Y")}.xlsx' #getting path to save results to
-    print(f"Exporting results to '{str(report_path)}'")
-    with pd.ExcelWriter(path= report_path, engine='openpyxl', mode='w') as writer: #writing results out to excel file
-        ghost_shipments_reduced.to_excel(excel_writer=writer, sheet_name='GGG_reduced', na_rep='', index=False)
-        fedex_broker_shipments_reduced.to_excel(excel_writer=writer, sheet_name='FedEx_reduced', na_rep='', index=False)
-        CBI_broker_shipments_reduced.to_excel(excel_writer=writer, sheet_name='CBI_reduced', na_rep='', index=False)
-        ghost_shipments.to_excel(excel_writer=writer, sheet_name='GGG', na_rep='', index=False)
-        fedex_broker_shipments.to_excel(excel_writer=writer, sheet_name='FedEx', na_rep='', index=False)
-        CBI_broker_shipments.to_excel(excel_writer=writer, sheet_name='CBI', na_rep='', index=False)
-
-    #Opening file when done pasting
-    os.startfile(report_path)
+    #Pasting results to excel files
+    for name, data in all_results.items():
+        report_path: Path = Path(os.getcwd())/f'{name}_gails_report_{datetime.today().strftime("%d-%b-%Y")}.xlsx' #getting path to save results to
+        print(f"Exporting results to '{report_path.as_posix()}'")
+        with pd.ExcelWriter(path= report_path, engine='openpyxl', mode='w') as writer: #writing results out to excel file
+            data.to_excel(excel_writer=writer, sheet_name=name, na_rep='', index=False)
 
 if __name__ == "__main__":
     run()
