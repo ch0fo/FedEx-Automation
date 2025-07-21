@@ -27,3 +27,4 @@ main_automation_programs/support-files/Oracle/*
 *.vscode/
 test.py
 *.json
+automation_env

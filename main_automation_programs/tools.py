@@ -52,10 +52,7 @@ _connector = Literal['AND', 'OR']
 def get_envvar(var_name: str, envfile_path: str = dotenv.find_dotenv()) -> str:
     """
     Returns the value for the given env var name.
-
     If the var does not exist, it returns ''.
-
-    If no env file path is given, it will load the one closest to where the tools.py file is stored.
     """
 
     dotenv.load_dotenv(dotenv_path=envfile_path, override=True) #loading given env file
