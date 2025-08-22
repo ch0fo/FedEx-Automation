@@ -7,7 +7,7 @@ import os.path
 from datetime import date
 import csv
 
-_BILLS_PER_CHUNK_ = 35000
+_BILLS_PER_CHUNK_ = 1000
 
 def main():
     path = fetch_path()

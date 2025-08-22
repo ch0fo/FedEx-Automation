@@ -29,7 +29,6 @@ def get_intercept_data(
     query_host: str = "edwmiscop1.prod.fedex.com",
     username: str = get_envvar('misa-username'),
     save_dataframe_as: _MODES = 'csv',
-    return_dataframe: bool = False,
     spooling_delay: int = 5
     ) -> pd.DataFrame | None:
     """
@@ -41,7 +40,6 @@ def get_intercept_data(
 
     The 'spooling_delay' variable can be used to wait out the executions, so that time is given for spool to clear.
     The 'save_dataframe_as' variable can be used to specify if you want to save the resulting dataframe as an excel file or a csv file.
-    Please note that 'return_dataframe' overrides 'save_dataframe_as'. If return dataframe is true, dataframes are not saved.
     """
 
     #Settings for query
@@ -62,6 +60,7 @@ def get_intercept_data(
         if start > last_day: #break out of loop when start date is over last day. This can only happen when we were unable to fetch the last day, in which case we need to exit the loop
             break
         successful_fetch = False #resetting successful fetch checker
+        exported_during_last_iter: bool = False
         curr_shift: int = min(day_shift, (last_day - start).days) #getting either day shift as passed, or difference between current start and last day to process, whichever is smaller
         print(f"Using day shift: {curr_shift}")
         while not successful_fetch: #keep executing until successful fetch (main reasons to fail are spooling error; out of spooling space)
@@ -72,13 +71,11 @@ def get_intercept_data(
             starting: str = f"'{start.strftime("%Y-%m-%d")}'"
             ending: str = f"'{end.strftime("%Y-%m-%d")}'"
             try:
-                # print(f"Username: {username}\nPassword: {password}")
-                # time.sleep(100000000)
                 with teradatasql.connect(host=query_host, user=username, password=password) as connection:
                     engine = create_engine('teradatasql://', creator=lambda: connection) #using sqlalchemy for better compatibility
                     print(f"Fetching dates {starting} to {ending}")
                     curr_qry: str = query.format(start_date = starting, end_date = ending)
-                    print(f'Current query: {curr_qry[:min(300, len(curr_qry))].replace('\n', ' ')}')
+                    print(f'Current query: {curr_qry.replace('\n', ' ')}')
                     data = pd.read_sql_query(sql=curr_qry, con=engine,
                                                 dtype={
                                                     'AWB_NBR': np.int64,
@@ -119,36 +116,40 @@ def get_intercept_data(
             print(f"Rows fetched: {data.shape[0]} for date range {starting} - {ending}")
             if dataframe.empty:
                 dataframe = data
-            else:
-                dataframe = pd.concat([dataframe, data], ignore_index=True) #If dataframe is not empty, concatenate to existing one
 
-    #Returning or saving to excel files
-    if return_dataframe:
-        return dataframe
+            else: dataframe = pd.concat([dataframe, data], ignore_index=True) #If dataframe is not empty, concatenate to existing one
 
-    else:
-        if save_dataframe_as == 'excel':
-            print("Saving dataframe(s) to excel file(s).")
-            dataframes: List[pd.DataFrame] = split_dataframe(dataframe) #getting list of dataframes to save
+            #Checking if print is needed
+            if len(dataframe.index) > 1000000: #export every 1,000,000 rows so that a really big file is not exported all at once at the end
+                print_rows(save_dataframe_as, dataframe, first_day, last_day)
+                del dataframe
+                dataframe = pd.DataFrame()
+                exported_during_last_iter = True
 
-            curr_dataframe: int = 1
-            for df in dataframes: #saves each dataframe into its own excel file
-                with pd.ExcelWriter(f'intercept_{first_day.strftime("%d_%b_%Y")}-{last_day.strftime("%d_%b_%Y")}_{curr_dataframe}.xlsx', mode='w') as writer:
-                    df.to_excel(excel_writer=writer, sheet_name='intercept', na_rep='null', index=False)
-                    print(f"Saved {curr_dataframe} of {len(dataframes)} dataframes.")
-                curr_dataframe += 1
-            
-            return None
+    #Print any remaining rows, in case the last rows were not exported
+    if not exported_during_last_iter: print_rows(save_dataframe_as, dataframe, first_day, last_day)
 
-        elif save_dataframe_as == 'csv':
-            print("Saving dataframe to csv file.")
-            with open(f'intercept_{first_day.strftime("%d_%b_%Y")}-{last_day.strftime("%d_%b_%Y")}.csv', mode='w', newline="") as file:
-                dataframe.to_csv(path_or_buf=file, na_rep='null', index=False, quoting=QUOTE_STRINGS)
-            # with pd.ExcelWriter(f'intercept_{first_day.strftime("%d_%b_%Y")}-{last_day.strftime("%d_%b_%Y")}_{curr_dataframe}.xlsx', mode='w') as writer:
-            #         df.to_excel(excel_writer=writer, sheet_name='intercept', na_rep='null', index=False)
-            #         print(f"Saved {curr_dataframe} of {len(dataframes)} dataframes.")
+def print_rows(save_dataframe_as: str, dataframe: pd.DataFrame, first_day: datetime.datetime, last_day: datetime.datetime) -> None:
+    secs_now: float = time.time()
+    if save_dataframe_as == 'excel':
+        print("Saving dataframe(s) to excel file(s).")
+        dataframes: List[pd.DataFrame] = split_dataframe(dataframe) #getting list of dataframes to save
 
-            return None
+        curr_dataframe: int = 1
+        for df in dataframes: #saves each dataframe into its own excel file
+            with pd.ExcelWriter(f'intercept_{first_day.strftime("%d_%b_%Y")}-{last_day.strftime("%d_%b_%Y")}_{curr_dataframe}_{secs_now}.xlsx', mode='w') as writer:
+                df.to_excel(excel_writer=writer, sheet_name='intercept', na_rep='null', index=False)
+                print(f"Saved {curr_dataframe} of {len(dataframes)} dataframes.")
+            curr_dataframe += 1
+        
+        return None
+
+    elif save_dataframe_as == 'csv':
+        print("Saving dataframe to csv file.")
+        with open(f'intercept_{first_day.strftime("%d_%b_%Y")}-{last_day.strftime("%d_%b_%Y")}_{secs_now}.csv', mode='w', newline="") as file:
+            dataframe.to_csv(path_or_buf=file, na_rep='null', index=False, quoting=QUOTE_STRINGS)
+
+        return None
     
 def split_dataframe(source_dataframe: pd.DataFrame, split_length: int = 1048576) -> List[pd.DataFrame]:
     """
@@ -166,5 +167,5 @@ def split_dataframe(source_dataframe: pd.DataFrame, split_length: int = 1048576)
 if __name__ == '__main__':
     get_intercept_data(query= get_query(query_path=r'main_automation_programs\support-files\queries\intercept_data.sql'),
                        #Modify the dates below to fetch for the time window you want
-                       first_day= datetime.datetime(2025,5,22), custom_last_day=datetime.datetime(2025,5,23), day_shift=4,
+                       first_day= datetime.datetime(2024,11,1), custom_last_day=datetime.datetime(2024,12,31), day_shift=1,
                        password=get_envvar(var_name='pw'))
